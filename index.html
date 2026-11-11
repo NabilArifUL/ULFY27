@@ -1,0 +1,1248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Apple Fiscal Year 2027 Calendar (FY27)</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Phosphor Icons -->
+  <script src="https://unpkg.com/@phosphor-icons/web"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            apple: {
+              gray: '#f5f5f7',
+              dark: '#1d1d1f',
+              blue: '#0071e3',
+              purple: '#6e40c9',
+              green: '#28cd41',
+              orange: '#ff9500',
+              pink: '#ff2d55'
+            }
+          },
+          fontFamily: {
+            sans: ['-apple-system', 'BlinkMacSystemFont', 'SF Pro Text', 'SF Pro Display', 'Inter', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    /* Smooth scrolling */
+    html {
+      scroll-behavior: smooth;
+    }
+    /* Custom subtle scrollbar */
+    ::-webkit-scrollbar {
+      width: 7px;
+      height: 7px;
+    }
+    ::-webkit-scrollbar-track {
+      background: rgba(0, 0, 0, 0.03);
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(0, 0, 0, 0.18);
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgba(0, 0, 0, 0.3);
+    }
+
+    /* Pop-out highlight animation */
+    @keyframes datePopOut {
+      0% {
+        transform: scale(1);
+        box-shadow: 0 0 0 0 rgba(0, 113, 227, 0.7);
+      }
+      35% {
+        transform: scale(1.15) translateY(-6px);
+        box-shadow: 0 16px 32px -6px rgba(0, 113, 227, 0.45);
+        border-color: #0071e3;
+        z-index: 30;
+      }
+      70% {
+        transform: scale(1.08) translateY(-3px);
+        box-shadow: 0 10px 24px -4px rgba(0, 113, 227, 0.3);
+        border-color: #0071e3;
+        z-index: 30;
+      }
+      100% {
+        transform: scale(1);
+        box-shadow: 0 0 0 0 rgba(0, 113, 227, 0);
+        z-index: 1;
+      }
+    }
+
+    .animate-pop-out {
+      animation: datePopOut 1.8s cubic-bezier(0.2, 0.8, 0.2, 1) forwards !important;
+    }
+
+    .badge-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 9999px;
+    }
+
+    /* Glassmorphism styling */
+    .glass-card {
+      background: rgba(255, 255, 255, 0.82);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+    }
+  </style>
+</head>
+<body class="bg-[#f5f5f7] text-[#1d1d1f] font-sans min-h-screen flex flex-col antialiased selection:bg-blue-500 selection:text-white">
+
+  <!-- Header -->
+  <header class="sticky top-0 z-40 glass-card border-b border-gray-200/80 transition-shadow duration-200 shadow-xs">
+    <div class="max-w-[1700px] mx-auto px-3 sm:px-5 h-13 flex items-center justify-between">
+      <div class="flex items-center space-x-2.5">
+        <div class="w-8 h-8 rounded-lg bg-black text-white flex items-center justify-center shadow-sm">
+          <i class="ph-bold ph-apple-logo text-lg"></i>
+        </div>
+        <div>
+          <h1 class="text-sm sm:text-base font-semibold tracking-tight text-gray-900 flex items-center gap-2">
+            Apple Fiscal Year 2027
+            <span class="text-[11px] font-medium px-2 py-0.5 bg-blue-100 text-blue-800 rounded-full">Oct 2026 – Sep 2027</span>
+          </h1>
+        </div>
+      </div>
+
+      <!-- Quick Action Controls -->
+      <div class="flex items-center space-x-2">
+        <button id="quickAddBtn" class="flex items-center space-x-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs sm:text-sm font-medium transition shadow-xs active:scale-95">
+          <i class="ph-bold ph-plus text-xs"></i>
+          <span>Add Event</span>
+        </button>
+        <button id="toggleSidebarBtn" class="lg:hidden p-1.5 text-gray-600 hover:text-black rounded-lg hover:bg-gray-200 transition">
+          <i class="ph-bold ph-list-dashes text-lg"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- Navigation Tabs -->
+    <div class="max-w-[1700px] mx-auto px-3 sm:px-5 border-t border-gray-100 flex items-center justify-between overflow-x-auto py-1 scrollbar-none">
+      <div class="flex space-x-1 py-0.5 text-xs sm:text-sm font-medium">
+        <button class="nav-tab px-3 py-1 rounded-lg text-blue-600 bg-blue-50 font-semibold transition" data-view="all">
+          <i class="ph ph-calendar mr-1"></i> Full FY Calendar
+        </button>
+        <button class="nav-tab px-3 py-1 rounded-lg text-gray-600 hover:text-black hover:bg-gray-100 transition" data-view="q1">
+          <span class="w-2 h-2 rounded-full inline-block bg-purple-500 mr-1.5"></span>Q1 <span class="text-[11px] text-gray-400 font-normal hidden md:inline">(Oct - Dec '26)</span>
+        </button>
+        <button class="nav-tab px-3 py-1 rounded-lg text-gray-600 hover:text-black hover:bg-gray-100 transition" data-view="q2">
+          <span class="w-2 h-2 rounded-full inline-block bg-blue-500 mr-1.5"></span>Q2 <span class="text-[11px] text-gray-400 font-normal hidden md:inline">(Jan - Mar '27)</span>
+        </button>
+        <button class="nav-tab px-3 py-1 rounded-lg text-gray-600 hover:text-black hover:bg-gray-100 transition" data-view="q3">
+          <span class="w-2 h-2 rounded-full inline-block bg-emerald-500 mr-1.5"></span>Q3 <span class="text-[11px] text-gray-400 font-normal hidden md:inline">(Apr - Jun '27)</span>
+        </button>
+        <button class="nav-tab px-3 py-1 rounded-lg text-gray-600 hover:text-black hover:bg-gray-100 transition" data-view="q4">
+          <span class="w-2 h-2 rounded-full inline-block bg-amber-500 mr-1.5"></span>Q4 <span class="text-[11px] text-gray-400 font-normal hidden md:inline">(Jul - Sep '27)</span>
+        </button>
+      </div>
+
+    </div>
+  </header>
+
+  <!-- Main Content Layout -->
+  <div class="max-w-[1700px] mx-auto px-2 sm:px-4 py-3 w-full flex-1 flex flex-col lg:flex-row gap-3">
+
+    <!-- Calendar Area (Left/Center) -->
+    <main class="flex-1 min-w-0" id="mainContent">
+      <!-- Calendar Months Grid Container -->
+      <div id="calendarMonthsGrid" class="space-y-3">
+        <!-- Rendered dynamically -->
+      </div>
+    </main>
+
+    <!-- Right Sidebar: Interactive Events Hub & Details -->
+    <aside id="eventsSidebar" class="w-full lg:w-80 xl:w-92 flex flex-col shrink-0 space-y-3">
+      
+      <!-- Quick Info / Instruction Card -->
+      <div class="bg-white rounded-xl p-3 shadow-xs border border-gray-200/70">
+        <div class="flex items-center justify-between mb-1.5">
+          <h2 class="font-semibold text-gray-900 flex items-center gap-1.5 text-xs">
+            <i class="ph-fill ph-cursor-click text-blue-600"></i>
+            Interactive Navigation
+          </h2>
+          <span class="text-[11px] bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full font-mono" id="eventsCountBadge">0 events</span>
+        </div>
+        <p class="text-[11px] text-gray-500 leading-normal">
+          Click any event below to <strong class="text-gray-700">scroll & pop out the calendar date</strong>. Click any date on the grid to create a new event.
+        </p>
+      </div>
+
+      <!-- Events List & Filtering -->
+      <div class="bg-white rounded-xl p-3.5 shadow-xs border border-gray-200/70 flex-1 flex flex-col">
+        <div class="flex items-center justify-between mb-2">
+          <h2 class="font-semibold text-gray-900 text-xs sm:text-sm">Key Fiscal Events</h2>
+          <button id="filterQuarterBtn" class="text-[11px] text-gray-500 hover:text-blue-600 font-medium px-2 py-0.5 rounded bg-gray-50 hover:bg-gray-100 transition">
+            All Quarters
+          </button>
+        </div>
+
+        <!-- Filter / Search input -->
+        <div class="relative mb-2">
+          <i class="ph ph-magnifying-glass absolute left-2.5 top-2 text-gray-400 text-xs"></i>
+          <input 
+            type="text" 
+            id="eventSearchInput" 
+            placeholder="Search events, categories, notes..."
+            class="w-full pl-7 pr-2.5 py-1 text-xs bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 transition"
+          >
+        </div>
+
+        <!-- Dynamic Category quick pill filters -->
+        <div class="flex gap-1 flex-wrap mb-2.5 text-xs" id="categoryFilters">
+          <button data-cat="all" class="cat-pill px-2 py-0.5 rounded-full bg-blue-600 text-white font-medium text-[10px] transition">All</button>
+        </div>
+
+        <!-- Event Cards Stack (Scrollable) -->
+        <div class="space-y-1.5 overflow-y-auto max-h-[620px] pr-1 flex-1" id="eventsListContainer">
+          <!-- Dynamic event cards injected here -->
+        </div>
+
+        <!-- Bottom Actions -->
+        <div class="mt-2.5 pt-2 border-t border-gray-100 flex items-center justify-between text-[11px] text-gray-500">
+          <button id="clearAllBtn" class="hover:text-red-600 font-medium transition flex items-center gap-1">
+            <i class="ph ph-trash"></i> Clear All
+          </button>
+          <button id="exportCsvBtn" class="hover:text-blue-600 font-medium transition flex items-center gap-1">
+            <i class="ph ph-download-simple"></i> Export CSV
+          </button>
+        </div>
+      </div>
+    </aside>
+  </div>
+
+  <!-- Modal: Add / Edit Event -->
+  <div id="eventModal" class="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm hidden items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-md w-full shadow-2xl overflow-hidden border border-gray-100 transform transition-all scale-95 opacity-0 duration-200" id="modalBox">
+      <!-- Modal Header -->
+      <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+        <h3 class="text-base font-semibold text-gray-900 flex items-center gap-2" id="modalTitle">
+          <i class="ph-bold ph-calendar-plus text-blue-600"></i> Add FY27 Event
+        </h3>
+        <button id="closeModalBtn" class="text-gray-400 hover:text-gray-700 p-1 rounded-lg">
+          <i class="ph-bold ph-x text-lg"></i>
+        </button>
+      </div>
+
+      <!-- Modal Body -->
+      <form id="eventForm" class="p-6 space-y-4">
+        <input type="hidden" id="editEventId" value="">
+        
+        <div>
+          <label class="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1">Event Title *</label>
+          <input 
+            type="text" 
+            id="eventTitle" 
+            required 
+            placeholder="e.g., Annual Review, Supplier Audit, Launch Window"
+            class="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition"
+          >
+        </div>
+
+        <!-- Start Date & End Date -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1">Start Date *</label>
+            <input 
+              type="date" 
+              id="eventStartDate" 
+              required
+              min="2026-10-01" 
+              max="2027-09-30" 
+              class="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition"
+            >
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1">End Date *</label>
+            <input 
+              type="date" 
+              id="eventEndDate" 
+              required
+              min="2026-10-01" 
+              max="2027-09-30" 
+              class="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition"
+            >
+          </div>
+        </div>
+
+        <!-- Event Color Selector -->
+        <div>
+          <label class="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1.5">Event Color</label>
+          <div class="flex items-center gap-2 flex-wrap" id="colorPickerContainer">
+            <!-- Rendered by JS -->
+          </div>
+          <input type="hidden" id="eventColor" value="#0071e3">
+        </div>
+
+        <!-- Custom Category input with datalist autocomplete -->
+        <div>
+          <label class="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1">Category (Custom)</label>
+          <div class="relative">
+            <input 
+              type="text" 
+              id="eventCategoryInput" 
+              list="existingCategoriesList"
+              placeholder="e.g., Marketing, Review, Finance, Audit, Logistics..."
+              class="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition"
+            >
+            <datalist id="existingCategoriesList"></datalist>
+          </div>
+          <p class="text-[11px] text-gray-400 mt-1">Type any custom category you'd like. It will be saved for reuse.</p>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1">Fiscal Quarter</label>
+          <input 
+            type="text" 
+            id="eventQuarterDisplay" 
+            readonly 
+            class="w-full px-3 py-2 text-xs text-gray-500 bg-gray-100 border border-gray-200 rounded-xl cursor-not-allowed"
+            value="Select dates between Oct 2026 - Sep 2027"
+          >
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1">Description / Notes</label>
+          <textarea 
+            id="eventDescription" 
+            rows="2" 
+            placeholder="Add investor details, streaming link, or agenda..."
+            class="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition"
+          ></textarea>
+        </div>
+
+        <div class="pt-2 flex items-center justify-between">
+          <button 
+            type="button" 
+            id="deleteEventBtn" 
+            class="hidden text-xs text-red-600 hover:text-red-700 font-semibold px-2 py-1 rounded transition"
+          >
+            Delete Event
+          </button>
+          <div class="flex items-center space-x-2 ml-auto">
+            <button 
+              type="button" 
+              id="cancelModalBtn" 
+              class="px-4 py-2 text-sm font-medium text-gray-600 hover:text-black rounded-xl hover:bg-gray-100 transition"
+            >
+              Cancel
+            </button>
+            <button 
+              type="submit" 
+              class="px-4 py-2 text-sm font-medium bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-sm transition active:scale-95"
+            >
+              Save Event
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Notification Toast -->
+  <div id="toast" class="fixed bottom-6 right-6 z-50 bg-gray-900 text-white px-4 py-3 rounded-xl shadow-xl flex items-center space-x-3 transform translate-y-20 opacity-0 transition-all duration-300 pointer-events-none">
+    <i class="ph-bold ph-check-circle text-emerald-400 text-lg"></i>
+    <span class="text-sm font-medium" id="toastMessage">Action completed</span>
+  </div>
+
+  <!-- JavaScript Logic -->
+  <script>
+    /* ----------------------------------------------------
+     * FY27 Definition & Constant Config
+     * Apple Fiscal Year 2027:
+     * - Q1: Oct 2026, Nov 2026, Dec 2026
+     * - Q2: Jan 2027, Feb 2027, Mar 2027
+     * - Q3: Apr 2027, May 2027, Jun 2027
+     * - Q4: Jul 2027, Aug 2027, Sep 2027
+     * ---------------------------------------------------- */
+    const FY_MONTHS = [
+      { year: 2026, month: 9, name: "October 2026", quarter: "q1", quarterLabel: "Q1 FY27", theme: "purple" },
+      { year: 2026, month: 10, name: "November 2026", quarter: "q1", quarterLabel: "Q1 FY27", theme: "purple" },
+      { year: 2026, month: 11, name: "December 2026", quarter: "q1", quarterLabel: "Q1 FY27", theme: "purple" },
+      { year: 2027, month: 0, name: "January 2027", quarter: "q2", quarterLabel: "Q2 FY27", theme: "blue" },
+      { year: 2027, month: 1, name: "February 2027", quarter: "q2", quarterLabel: "Q2 FY27", theme: "blue" },
+      { year: 2027, month: 2, name: "March 2027", quarter: "q2", quarterLabel: "Q2 FY27", theme: "blue" },
+      { year: 2027, month: 3, name: "April 2027", quarter: "q3", quarterLabel: "Q3 FY27", theme: "emerald" },
+      { year: 2027, month: 4, name: "May 2027", quarter: "q3", quarterLabel: "Q3 FY27", theme: "emerald" },
+      { year: 2027, month: 5, name: "June 2027", quarter: "q3", quarterLabel: "Q3 FY27", theme: "emerald" },
+      { year: 2027, month: 6, name: "July 2027", quarter: "q4", quarterLabel: "Q4 FY27", theme: "amber" },
+      { year: 2027, month: 7, name: "August 2027", quarter: "q4", quarterLabel: "Q4 FY27", theme: "amber" },
+      { year: 2027, month: 8, name: "September 2027", quarter: "q4", quarterLabel: "Q4 FY27", theme: "amber" }
+    ];
+
+    const QUARTERS = {
+      q1: { title: "Quarter 1", subtitle: "October 2026 – December 2026", color: "purple" },
+      q2: { title: "Quarter 2", subtitle: "January 2027 – March 2027", color: "blue" },
+      q3: { title: "Quarter 3", subtitle: "April 2027 – June 2027", color: "emerald" },
+      q4: { title: "Quarter 4", subtitle: "July 2027 – September 2027", color: "amber" }
+    };
+
+    // Color palette available for distinct event coloring
+    const EVENT_PALETTE = [
+      { hex: '#0071e3', label: 'Apple Blue', bg: '#eff6ff', text: '#1e40af', border: '#bfdbfe' },
+      { hex: '#6e40c9', label: 'Purple', bg: '#f5f3ff', text: '#5b21b6', border: '#ddd6fe' },
+      { hex: '#e11d48', label: 'Rose', bg: '#fff1f2', text: '#9f1239', border: '#fecdd3' },
+      { hex: '#ea580c', label: 'Orange', bg: '#fff7ed', text: '#9a3412', border: '#fed7aa' },
+      { hex: '#16a34a', label: 'Emerald', bg: '#f0fdf4', text: '#166534', border: '#bbf7d0' },
+      { hex: '#0284c7', label: 'Sky', bg: '#f0f9ff', text: '#075985', border: '#bae6fd' },
+      { hex: '#d97706', label: 'Amber', bg: '#fffbeb', text: '#92400e', border: '#fde68a' },
+      { hex: '#db2777', label: 'Pink', bg: '#fdf2f8', text: '#9d174d', border: '#fbcfe8' },
+      { hex: '#059669', label: 'Teal', bg: '#f0fdfa', text: '#115e59', border: '#99f6e4' },
+      { hex: '#4f46e5', label: 'Indigo', bg: '#eef2ff', text: '#3730a3', border: '#c7d2fe' }
+    ];
+
+    function getEventColorDef(colorHex) {
+      return EVENT_PALETTE.find(c => c.hex.toLowerCase() === (colorHex || '').toLowerCase()) || {
+        hex: colorHex || '#0071e3',
+        bg: '#eff6ff',
+        text: '#1e40af',
+        border: '#bfdbfe'
+      };
+    }
+
+    // Auto-pick next distinct color from palette based on current events length
+    function getNextAutoColor() {
+      const idx = events.length % EVENT_PALETTE.length;
+      return EVENT_PALETTE[idx].hex;
+    }
+
+    /* ----------------------------------------------------
+     * State Management
+     * ---------------------------------------------------- */
+    let currentView = 'all'; // 'all', 'q1', 'q2', 'q3', 'q4'
+    let activeCategoryFilter = 'all';
+    let searchQuery = '';
+    let events = [];
+
+    // Helper: checks if a given date string (YYYY-MM-DD) falls within an event's start & end date
+    function isDateInEventRange(dateStr, event) {
+      const start = event.startDate || event.date;
+      const end = event.endDate || event.startDate || event.date;
+      return dateStr >= start && dateStr <= end;
+    }
+
+    // Load from local storage or set defaults
+    function loadEvents() {
+      try {
+        const saved = localStorage.getItem('apple_fy27_events');
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          events = parsed.map((e, index) => ({
+            ...e,
+            startDate: e.startDate || e.date || '2026-10-01',
+            endDate: e.endDate || e.startDate || e.date || '2026-10-01',
+            category: (e.category || '').trim(),
+            color: e.color || EVENT_PALETTE[index % EVENT_PALETTE.length].hex
+          }));
+        } else {
+          events = [];
+        }
+      } catch (e) {
+        events = [];
+      }
+    }
+
+    function saveEvents() {
+      try {
+        localStorage.setItem('apple_fy27_events', JSON.stringify(events));
+      } catch (e) {
+        console.error("Local storage error:", e);
+      }
+    }
+
+    // Determine Apple FY quarter by ISO date string (YYYY-MM-DD)
+    function getFiscalQuarter(dateStr) {
+      if (!dateStr) return '';
+      const parts = dateStr.split('-');
+      const y = parseInt(parts[0], 10);
+      const m = parseInt(parts[1], 10); // 1 - 12
+
+      if (y === 2026 && (m === 10 || m === 11 || m === 12)) return 'q1';
+      if (y === 2027 && (m === 1 || m === 2 || m === 3)) return 'q2';
+      if (y === 2027 && (m === 4 || m === 5 || m === 6)) return 'q3';
+      if (y === 2027 && (m === 7 || m === 8 || m === 9)) return 'q4';
+      return '';
+    }
+
+    /* ----------------------------------------------------
+     * Rendering: Calendar Matrix
+     * ---------------------------------------------------- */
+    function renderCalendar() {
+      const container = document.getElementById('calendarMonthsGrid');
+      container.innerHTML = '';
+
+      let quartersToRender = ['q1', 'q2', 'q3', 'q4'];
+      if (currentView !== 'all') {
+        quartersToRender = [currentView];
+      }
+
+      quartersToRender.forEach(qKey => {
+        const qInfo = QUARTERS[qKey];
+        const monthsInQuarter = FY_MONTHS.filter(m => m.quarter === qKey);
+
+        const quarterSection = document.createElement('section');
+        quarterSection.className = 'bg-white rounded-3xl p-5 sm:p-6 shadow-sm border border-gray-200/80 transition-all';
+        quarterSection.id = `section-${qKey}`;
+
+        quarterSection.className = 'bg-white rounded-2xl p-3 sm:p-4 shadow-xs border border-gray-200/80 transition-all';
+        quarterSection.id = `section-${qKey}`;
+
+        // Header for Quarter with pill and stats
+        const qEventsCount = events.filter(e => {
+          const sQ = getFiscalQuarter(e.startDate);
+          const eQ = getFiscalQuarter(e.endDate);
+          return sQ === qKey || eQ === qKey;
+        }).length;
+        
+        let headerColorClass = "text-purple-600 bg-purple-50 border-purple-200";
+        if (qKey === 'q2') headerColorClass = "text-blue-600 bg-blue-50 border-blue-200";
+        if (qKey === 'q3') headerColorClass = "text-emerald-600 bg-emerald-50 border-emerald-200";
+        if (qKey === 'q4') headerColorClass = "text-amber-600 bg-amber-50 border-amber-200";
+
+        quarterSection.innerHTML = `
+          <div class="flex items-center justify-between pb-2 mb-2.5 border-b border-gray-100 gap-2">
+            <div class="flex items-center space-x-2">
+              <span class="px-2 py-0.5 text-[11px] font-bold rounded border uppercase tracking-wider ${headerColorClass}">
+                ${qKey.toUpperCase()} FY27
+              </span>
+              <span class="text-xs text-gray-400 font-medium">${qInfo.subtitle}</span>
+            </div>
+            <div class="flex items-center space-x-2 text-xs text-gray-500">
+              <span class="bg-gray-100 px-2 py-0.5 rounded text-[11px] font-medium text-gray-600">
+                <i class="ph-bold ph-calendar-check text-blue-500 mr-1"></i>${qEventsCount} scheduled
+              </span>
+            </div>
+          </div>
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2.5 sm:gap-3">
+            ${monthsInQuarter.map(monthData => generateMonthHTML(monthData)).join('')}
+          </div>
+        `;
+
+        container.appendChild(quarterSection);
+      });
+
+      attachDayCellListeners();
+    }
+
+    // Helper: generate a single month grid
+    function generateMonthHTML(mInfo) {
+      const { year, month, name } = mInfo;
+      const firstDay = new Date(year, month, 1);
+      const startingDayOfWeek = firstDay.getDay(); // 0 is Sun
+      const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+      const dayNames = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
+
+      let daysGridHTML = '';
+
+      for (let i = 0; i < startingDayOfWeek; i++) {
+        daysGridHTML += `<div class="h-8 sm:h-9 rounded bg-gray-50/40"></div>`;
+      }
+
+      for (let day = 1; day <= daysInMonth; day++) {
+        const mm = String(month + 1).padStart(2, '0');
+        const dd = String(day).padStart(2, '0');
+        const dateString = `${year}-${mm}-${dd}`;
+
+        // Get events active on this specific date
+        const dayEvents = events.filter(e => isDateInEventRange(dateString, e));
+        const hasEvent = dayEvents.length > 0;
+
+        let badgeIndicators = '';
+        let dayInlineStyle = '';
+
+        if (hasEvent) {
+          // If 1 event, lightly tint the date cell with that event's custom color
+          if (dayEvents.length === 1) {
+            const cDef = getEventColorDef(dayEvents[0].color);
+            dayInlineStyle = `style="background-color: ${cDef.bg}; border-color: ${cDef.border};"`;
+          }
+
+          badgeIndicators = `
+            <div class="flex gap-0.5 justify-center mt-0.5">
+              ${dayEvents.slice(0, 3).map(e => {
+                const cDef = getEventColorDef(e.color);
+                return `<span class="badge-dot ring-1 ring-white" style="background-color: ${cDef.hex};" title="${escapeHtml(e.title)}${e.category ? ' (' + escapeHtml(e.category) + ')' : ''}"></span>`;
+              }).join('')}
+              ${dayEvents.length > 3 ? `<span class="text-[8px] text-gray-500 font-bold leading-none">+</span>` : ''}
+            </div>
+          `;
+        }
+
+        const isWeekend = (startingDayOfWeek + day - 1) % 7 === 0 || (startingDayOfWeek + day - 1) % 7 === 6;
+
+        daysGridHTML += `
+          <div 
+            id="cell-${dateString}" 
+            data-date="${dateString}" 
+            ${dayInlineStyle}
+            class="day-cell group relative h-8 sm:h-9 rounded-lg p-0.5 flex flex-col items-center justify-center transition-all duration-200 border cursor-pointer select-none
+              ${hasEvent 
+                ? (dayEvents.length > 1 ? 'bg-blue-50/70 border-blue-200 hover:border-blue-400 shadow-2xs' : 'hover:brightness-95 shadow-2xs')
+                : 'bg-white border-gray-100 hover:bg-gray-50 hover:border-gray-300'
+              }
+              ${isWeekend && !hasEvent ? 'text-gray-400' : 'text-gray-800'}"
+          >
+            <span class="text-[11px] font-semibold leading-none group-hover:scale-105 transition-transform flex items-center justify-center text-center">
+              ${day}
+            </span>
+            ${badgeIndicators ? `<div class="absolute bottom-1 w-full flex justify-center">${badgeIndicators}</div>` : ''}
+          </div>
+        `;
+      }
+
+      return `
+        <div class="bg-[#fafafb] rounded-xl p-2.5 border border-gray-200/70">
+          <div class="flex items-center justify-between mb-1.5 px-0.5">
+            <h4 class="text-xs font-bold text-gray-800">${name}</h4>
+            <span class="text-[9px] font-semibold text-gray-400 uppercase tracking-wider">${mInfo.quarter.toUpperCase()}</span>
+          </div>
+          <div class="grid grid-cols-7 gap-1 text-center mb-0.5">
+            ${dayNames.map(d => `<span class="text-[9px] font-semibold text-gray-400 py-0.2">${d}</span>`).join('')}
+          </div>
+          <div class="grid grid-cols-7 gap-1">
+            ${daysGridHTML}
+          </div>
+        </div>
+      `;
+    }
+
+    function attachDayCellListeners() {
+      document.querySelectorAll('.day-cell').forEach(cell => {
+        cell.addEventListener('click', () => {
+          const clickedDate = cell.getAttribute('data-date');
+          openCreateModal(clickedDate, clickedDate);
+        });
+      });
+    }
+
+    /* ----------------------------------------------------
+     * Dynamic Category Management & Suggestions
+     * ---------------------------------------------------- */
+    function updateCategoryControls() {
+      // Collect unique non-empty categories
+      const distinctCats = Array.from(new Set(
+        events
+          .map(e => (e.category || '').trim())
+          .filter(c => c.length > 0)
+      )).sort();
+
+      // 1. Update the HTML datalist for form autocompletion
+      const datalist = document.getElementById('existingCategoriesList');
+      datalist.innerHTML = distinctCats.map(cat => `<option value="${escapeHtml(cat)}"></option>`).join('');
+
+      // 2. Render dynamic category pills in the sidebar
+      const pillsContainer = document.getElementById('categoryFilters');
+      let pillsHTML = `
+        <button data-cat="all" class="cat-pill px-2.5 py-1 rounded-full ${activeCategoryFilter === 'all' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'} font-medium text-[11px] transition">All</button>
+      `;
+
+      distinctCats.forEach(cat => {
+        const isActive = activeCategoryFilter.toLowerCase() === cat.toLowerCase();
+        pillsHTML += `
+          <button data-cat="${escapeHtml(cat)}" class="cat-pill px-2.5 py-1 rounded-full ${isActive ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'} text-[11px] font-medium transition">
+            ${escapeHtml(cat)}
+          </button>
+        `;
+      });
+
+      pillsContainer.innerHTML = pillsHTML;
+
+      // Re-bind pill click listeners
+      pillsContainer.querySelectorAll('.cat-pill').forEach(btn => {
+        btn.addEventListener('click', () => {
+          activeCategoryFilter = btn.getAttribute('data-cat');
+          updateCategoryPills();
+          renderEventsList();
+        });
+      });
+    }
+
+    /* ----------------------------------------------------
+     * Rendering: Sidebar Events List
+     * ---------------------------------------------------- */
+    function renderEventsList() {
+      const container = document.getElementById('eventsListContainer');
+      const badge = document.getElementById('eventsCountBadge');
+
+      let filtered = events.slice();
+
+      // Quarter filtering based on start date or end date
+      if (currentView !== 'all') {
+        filtered = filtered.filter(e => {
+          const sQ = getFiscalQuarter(e.startDate);
+          const eQ = getFiscalQuarter(e.endDate);
+          return sQ === currentView || eQ === currentView;
+        });
+      }
+
+      // Dynamic custom category filtering
+      if (activeCategoryFilter !== 'all') {
+        filtered = filtered.filter(e => (e.category || '').trim().toLowerCase() === activeCategoryFilter.toLowerCase());
+      }
+
+      // Search query filtering
+      if (searchQuery.trim() !== '') {
+        const query = searchQuery.toLowerCase();
+        filtered = filtered.filter(e => 
+          e.title.toLowerCase().includes(query) || 
+          (e.description && e.description.toLowerCase().includes(query)) ||
+          (e.category && e.category.toLowerCase().includes(query)) ||
+          e.startDate.includes(query) ||
+          e.endDate.includes(query)
+        );
+      }
+
+      // Sort by startDate ascending
+      filtered.sort((a, b) => new Date(a.startDate) - new Date(b.startDate));
+
+      badge.textContent = `${filtered.length} shown`;
+
+      if (filtered.length === 0) {
+        container.innerHTML = `
+          <div class="text-center py-10 px-4 text-gray-400">
+            <i class="ph ph-calendar-blank text-3xl mb-2 stroke-[1.5]"></i>
+            <p class="text-xs font-medium">No events found matching criteria.</p>
+            <button onclick="resetFilters()" class="mt-2 text-xs text-blue-600 font-semibold hover:underline">
+              Clear filters
+            </button>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = filtered.map(item => {
+        const cDef = getEventColorDef(item.color);
+        const qUpper = item.quarter ? item.quarter.toUpperCase() : 'FY27';
+
+        // Format date or date range display
+        const startObj = new Date(item.startDate + 'T00:00:00');
+        const endObj = new Date(item.endDate + 'T00:00:00');
+
+        let formattedDateRange = startObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+        if (item.startDate !== item.endDate) {
+          const endStr = endObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+          formattedDateRange = `${formattedDateRange} – ${endStr}`;
+        }
+
+        return `
+          <div 
+            class="event-card group relative p-2.5 rounded-lg border transition-all duration-200 cursor-pointer hover:shadow-xs"
+            style="background-color: ${cDef.bg}; border-color: ${cDef.border}; border-left: 3.5px solid ${cDef.hex};"
+            data-start="${item.startDate}"
+            data-end="${item.endDate}"
+            data-id="${item.id}"
+          >
+            <div class="flex items-start justify-between gap-1.5">
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center flex-wrap gap-1 mb-0.5">
+                  <span class="w-2 h-2 rounded-full inline-block shrink-0 shadow-2xs" style="background-color: ${cDef.hex}"></span>
+                  ${item.category ? `
+                    <span class="inline-flex items-center px-1.5 py-0.2 rounded text-[9px] font-semibold bg-white/80 border border-gray-200 text-gray-700">
+                      ${escapeHtml(item.category)}
+                    </span>
+                  ` : ''}
+                  <span class="text-[9px] font-semibold text-gray-500 bg-white/80 px-1 py-0.2 rounded border border-gray-200">
+                    ${qUpper}
+                  </span>
+                  <span class="text-[11px] font-medium text-gray-600">
+                    <i class="ph ph-calendar-blank mr-0.5"></i> ${formattedDateRange}
+                  </span>
+                </div>
+                <h4 class="text-xs font-bold text-gray-900 group-hover:opacity-85 transition-opacity truncate">
+                  ${escapeHtml(item.title)}
+                </h4>
+                ${item.description ? `
+                  <p class="text-[10px] text-gray-600 mt-0.5 line-clamp-1 leading-snug">
+                    ${escapeHtml(item.description)}
+                  </p>
+                ` : ''}
+              </div>
+
+              <div class="flex items-center gap-1 shrink-0 opacity-80 group-hover:opacity-100 transition-opacity">
+                <button 
+                  title="Pop out on Calendar" 
+                  class="popout-btn w-6 h-6 rounded bg-white border border-gray-200 text-gray-700 hover:text-blue-600 hover:bg-gray-50 flex items-center justify-center shadow-2xs transition"
+                  data-start="${item.startDate}"
+                  data-end="${item.endDate}"
+                >
+                  <i class="ph-bold ph-crosshair text-[11px]"></i>
+                </button>
+                <button 
+                  title="Edit Event" 
+                  class="edit-btn w-6 h-6 rounded bg-white border border-gray-200 text-gray-500 hover:text-black hover:bg-gray-50 flex items-center justify-center shadow-2xs transition"
+                  data-id="${item.id}"
+                >
+                  <i class="ph ph-pencil-simple text-[11px]"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      // Add event listeners for cards
+      container.querySelectorAll('.event-card').forEach(card => {
+        card.addEventListener('click', (e) => {
+          if (e.target.closest('.edit-btn')) {
+            const id = e.target.closest('.edit-btn').getAttribute('data-id');
+            openEditModal(id);
+            return;
+          }
+          const start = card.getAttribute('data-start');
+          const end = card.getAttribute('data-end');
+          highlightAndScrollToDateRange(start, end);
+        });
+      });
+    }
+
+    /* ----------------------------------------------------
+     * Core Interaction: Scroll & Pop-Out Date Range
+     * ---------------------------------------------------- */
+    function highlightAndScrollToDateRange(startDateStr, endDateStr) {
+      if (!startDateStr) return;
+      const endStr = endDateStr || startDateStr;
+
+      const quarter = getFiscalQuarter(startDateStr);
+
+      if (currentView !== 'all' && currentView !== quarter) {
+        currentView = 'all';
+        updateNavTabs();
+        renderCalendar();
+      }
+
+      const targetCell = document.getElementById(`cell-${startDateStr}`);
+
+      if (!targetCell) {
+        showToast("Date is outside current view range.");
+        return;
+      }
+
+      // Smooth scroll to the start date
+      targetCell.scrollIntoView({
+        behavior: 'smooth',
+        block: 'center',
+        inline: 'center'
+      });
+
+      // Clear previous pop-out animations
+      document.querySelectorAll('.animate-pop-out').forEach(el => {
+        el.classList.remove('animate-pop-out');
+      });
+
+      setTimeout(() => {
+        // Pop-out all days included in this range that are rendered
+        let cur = new Date(startDateStr + 'T00:00:00');
+        const stop = new Date(endStr + 'T00:00:00');
+
+        while (cur <= stop) {
+          const y = cur.getFullYear();
+          const m = String(cur.getMonth() + 1).padStart(2, '0');
+          const d = String(cur.getDate()).padStart(2, '0');
+          const dStr = `${y}-${m}-${d}`;
+          const cell = document.getElementById(`cell-${dStr}`);
+          if (cell) {
+            cell.classList.add('animate-pop-out');
+          }
+          cur.setDate(cur.getDate() + 1);
+        }
+
+        showToast(startDateStr === endStr ? `Navigated to ${startDateStr}` : `Navigated to range ${startDateStr} to ${endStr}`);
+
+        setTimeout(() => {
+          document.querySelectorAll('.animate-pop-out').forEach(el => {
+            el.classList.remove('animate-pop-out');
+          });
+        }, 2200);
+      }, 200);
+    }
+
+    /* ----------------------------------------------------
+     * Tab Navigation & Filter Logic
+     * ---------------------------------------------------- */
+    function updateNavTabs() {
+      document.querySelectorAll('.nav-tab').forEach(tab => {
+        const view = tab.getAttribute('data-view');
+        if (view === currentView) {
+          tab.classList.add('text-blue-600', 'bg-blue-50', 'font-semibold');
+          tab.classList.remove('text-gray-600', 'hover:bg-gray-100');
+        } else {
+          tab.classList.remove('text-blue-600', 'bg-blue-50', 'font-semibold');
+          tab.classList.add('text-gray-600', 'hover:bg-gray-100');
+        }
+      });
+
+      const qBtn = document.getElementById('filterQuarterBtn');
+      if (qBtn) {
+        qBtn.textContent = currentView === 'all' ? 'All Quarters' : currentView.toUpperCase() + ' Active';
+      }
+    }
+
+    function resetFilters() {
+      currentView = 'all';
+      activeCategoryFilter = 'all';
+      searchQuery = '';
+      document.getElementById('eventSearchInput').value = '';
+      updateCategoryControls();
+      updateNavTabs();
+      renderCalendar();
+      renderEventsList();
+    }
+
+    function updateCategoryPills() {
+      document.querySelectorAll('.cat-pill').forEach(btn => {
+        const cat = btn.getAttribute('data-cat');
+        if (cat.toLowerCase() === activeCategoryFilter.toLowerCase()) {
+          btn.classList.add('bg-blue-600', 'text-white', 'font-medium');
+          btn.classList.remove('bg-gray-100', 'text-gray-600');
+        } else {
+          btn.classList.remove('bg-blue-600', 'text-white', 'font-medium');
+          btn.classList.add('bg-gray-100', 'text-gray-600');
+        }
+      });
+    }
+
+    /* ----------------------------------------------------
+     * Modal Management: Add & Edit Events
+     * ---------------------------------------------------- */
+    const modal = document.getElementById('eventModal');
+    const modalBox = document.getElementById('modalBox');
+    const eventForm = document.getElementById('eventForm');
+    const editEventId = document.getElementById('editEventId');
+    const eventTitle = document.getElementById('eventTitle');
+    const eventStartDate = document.getElementById('eventStartDate');
+    const eventEndDate = document.getElementById('eventEndDate');
+    const eventCategoryInput = document.getElementById('eventCategoryInput');
+    const eventColorInput = document.getElementById('eventColor');
+    const colorPickerContainer = document.getElementById('colorPickerContainer');
+    const eventDescription = document.getElementById('eventDescription');
+    const eventQuarterDisplay = document.getElementById('eventQuarterDisplay');
+    const deleteEventBtn = document.getElementById('deleteEventBtn');
+    const modalTitle = document.getElementById('modalTitle');
+
+    function renderColorPalettePicker(selectedHex) {
+      colorPickerContainer.innerHTML = EVENT_PALETTE.map(c => {
+        const isSelected = c.hex.toLowerCase() === (selectedHex || '').toLowerCase();
+        return `
+          <button 
+            type="button" 
+            data-color="${c.hex}" 
+            title="${c.label}" 
+            class="color-swatch-btn w-7 h-7 rounded-full flex items-center justify-center transition-transform hover:scale-110 active:scale-95 border-2 ${isSelected ? 'border-gray-900 ring-2 ring-gray-400 scale-105' : 'border-white'}"
+            style="background-color: ${c.hex};"
+          >
+            ${isSelected ? '<i class="ph-bold ph-check text-white text-xs"></i>' : ''}
+          </button>
+        `;
+      }).join('');
+
+      colorPickerContainer.querySelectorAll('.color-swatch-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const chosen = btn.getAttribute('data-color');
+          eventColorInput.value = chosen;
+          renderColorPalettePicker(chosen);
+        });
+      });
+    }
+
+    function openModal() {
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+      setTimeout(() => {
+        modalBox.classList.remove('scale-95', 'opacity-0');
+        modalBox.classList.add('scale-100', 'opacity-100');
+      }, 10);
+    }
+
+    function closeModal() {
+      modalBox.classList.remove('scale-100', 'opacity-100');
+      modalBox.classList.add('scale-95', 'opacity-0');
+      setTimeout(() => {
+        modal.classList.remove('flex');
+        modal.classList.add('hidden');
+        eventForm.reset();
+        editEventId.value = '';
+        deleteEventBtn.classList.add('hidden');
+      }, 150);
+    }
+
+    function openCreateModal(startDefault = '', endDefault = '') {
+      modalTitle.innerHTML = `<i class="ph-bold ph-calendar-plus text-blue-600"></i> Add FY27 Event`;
+      eventForm.reset();
+      editEventId.value = '';
+      deleteEventBtn.classList.add('hidden');
+
+      const s = startDefault || '2026-10-01';
+      const e = endDefault || s;
+
+      const autoColor = getNextAutoColor();
+      eventColorInput.value = autoColor;
+      renderColorPalettePicker(autoColor);
+
+      eventStartDate.value = s;
+      eventEndDate.value = e;
+      updateQuarterDisplay(s, e);
+
+      openModal();
+      setTimeout(() => eventTitle.focus(), 150);
+    }
+
+    function openEditModal(eventId) {
+      const evt = events.find(e => e.id === eventId);
+      if (!evt) return;
+
+      modalTitle.innerHTML = `<i class="ph-bold ph-pencil-simple text-blue-600"></i> Edit Event`;
+      editEventId.value = evt.id;
+      eventTitle.value = evt.title;
+      eventStartDate.value = evt.startDate;
+      eventEndDate.value = evt.endDate || evt.startDate;
+      eventCategoryInput.value = evt.category || '';
+      eventColorInput.value = evt.color || '#0071e3';
+      renderColorPalettePicker(evt.color || '#0071e3');
+      eventDescription.value = evt.description || '';
+      updateQuarterDisplay(evt.startDate, evt.endDate);
+      deleteEventBtn.classList.remove('hidden');
+
+      openModal();
+    }
+
+    function updateQuarterDisplay(startVal, endVal) {
+      const qStart = getFiscalQuarter(startVal);
+      const qEnd = getFiscalQuarter(endVal);
+
+      if (qStart && qEnd) {
+        if (qStart === qEnd) {
+          const details = QUARTERS[qStart] ? QUARTERS[qStart].subtitle : '';
+          eventQuarterDisplay.value = `${qStart.toUpperCase()} FY27 (${details})`;
+        } else {
+          eventQuarterDisplay.value = `Spans ${qStart.toUpperCase()} to ${qEnd.toUpperCase()} FY27`;
+        }
+      } else {
+        eventQuarterDisplay.value = 'Dates must fall between Oct 1, 2026 and Sep 30, 2027';
+      }
+    }
+
+    eventStartDate.addEventListener('change', (e) => {
+      // If end date is prior to start date, update end date to match
+      if (eventEndDate.value < e.target.value) {
+        eventEndDate.value = e.target.value;
+      }
+      updateQuarterDisplay(e.target.value, eventEndDate.value);
+    });
+
+    eventEndDate.addEventListener('change', (e) => {
+      // If start date is after end date, update start date to match
+      if (eventStartDate.value > e.target.value) {
+        eventStartDate.value = e.target.value;
+      }
+      updateQuarterDisplay(eventStartDate.value, e.target.value);
+    });
+
+    eventForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const title = eventTitle.value.trim();
+      const startDate = eventStartDate.value;
+      const endDate = eventEndDate.value;
+      const category = eventCategoryInput.value.trim();
+      const color = eventColorInput.value || '#0071e3';
+      const desc = eventDescription.value.trim();
+      const qStart = getFiscalQuarter(startDate);
+      const qEnd = getFiscalQuarter(endDate);
+
+      if (!qStart || !qEnd) {
+        showToast("Start and End dates must fall in FY27 (Oct 2026 - Sep 2027)");
+        return;
+      }
+
+      if (endDate < startDate) {
+        showToast("End date cannot be earlier than start date");
+        return;
+      }
+
+      if (editEventId.value) {
+        // Edit existing
+        const idx = events.findIndex(item => item.id === editEventId.value);
+        if (idx !== -1) {
+          events[idx] = {
+            ...events[idx],
+            title,
+            startDate,
+            endDate,
+            date: startDate, // backward compatibility
+            category,
+            color,
+            description: desc,
+            quarter: qStart
+          };
+          showToast("Event updated successfully!");
+        }
+      } else {
+        // Create new
+        const newEvent = {
+          id: 'evt-' + Date.now(),
+          title,
+          startDate,
+          endDate,
+          date: startDate, // backward compatibility
+          category,
+          color,
+          description: desc,
+          quarter: qStart
+        };
+        events.push(newEvent);
+        showToast("New event added to FY27!");
+      }
+
+      saveEvents();
+      closeModal();
+      updateCategoryControls();
+      renderCalendar();
+      renderEventsList();
+
+      setTimeout(() => {
+        highlightAndScrollToDateRange(startDate, endDate);
+      }, 250);
+    });
+
+    deleteEventBtn.addEventListener('click', () => {
+      const id = editEventId.value;
+      if (!id) return;
+      events = events.filter(e => e.id !== id);
+      saveEvents();
+      closeModal();
+      updateCategoryControls();
+      renderCalendar();
+      renderEventsList();
+      showToast("Event removed");
+    });
+
+    document.getElementById('quickAddBtn').addEventListener('click', () => openCreateModal());
+    document.getElementById('closeModalBtn').addEventListener('click', closeModal);
+    document.getElementById('cancelModalBtn').addEventListener('click', closeModal);
+
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) closeModal();
+    });
+
+    /* ----------------------------------------------------
+     * Search & Filter Listeners
+     * ---------------------------------------------------- */
+    document.getElementById('eventSearchInput').addEventListener('input', (e) => {
+      searchQuery = e.target.value;
+      renderEventsList();
+    });
+
+    document.querySelectorAll('.nav-tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        currentView = tab.getAttribute('data-view');
+        updateNavTabs();
+        renderCalendar();
+        renderEventsList();
+      });
+    });
+
+    document.getElementById('filterQuarterBtn').addEventListener('click', () => {
+      currentView = 'all';
+      updateNavTabs();
+      renderCalendar();
+      renderEventsList();
+    });
+
+    // Clear all events button
+    document.getElementById('clearAllBtn').addEventListener('click', () => {
+      if (events.length === 0) {
+        showToast("Calendar is already empty");
+        return;
+      }
+      events = [];
+      saveEvents();
+      updateCategoryControls();
+      renderCalendar();
+      renderEventsList();
+      showToast("All events cleared");
+    });
+
+    // CSV Export
+    document.getElementById('exportCsvBtn').addEventListener('click', () => {
+      if (!events.length) {
+        showToast("No events to export");
+        return;
+      }
+      let csv = 'ID,Title,StartDate,EndDate,Quarter,Color,Category,Description\n';
+      events.forEach(e => {
+        csv += `"${e.id}","${escapeCsv(e.title)}","${e.startDate}","${e.endDate}","${e.quarter}","${e.color || '#0071e3'}","${escapeCsv(e.category || '')}","${escapeCsv(e.description || '')}"\n`;
+      });
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `Apple_FY27_Calendar_Events.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      showToast("Exported FY27 CSV file");
+    });
+
+    // Mobile sidebar toggle
+    const toggleSidebarBtn = document.getElementById('toggleSidebarBtn');
+    const eventsSidebar = document.getElementById('eventsSidebar');
+    toggleSidebarBtn.addEventListener('click', () => {
+      eventsSidebar.scrollIntoView({ behavior: 'smooth' });
+    });
+
+    /* ----------------------------------------------------
+     * Toast Notifications Helper
+     * ---------------------------------------------------- */
+    let toastTimeout;
+    function showToast(msg) {
+      const toast = document.getElementById('toast');
+      const toastMsg = document.getElementById('toastMessage');
+      toastMsg.textContent = msg;
+      toast.classList.remove('translate-y-20', 'opacity-0');
+      toast.classList.add('translate-y-0', 'opacity-100');
+
+      clearTimeout(toastTimeout);
+      toastTimeout = setTimeout(() => {
+        toast.classList.remove('translate-y-0', 'opacity-100');
+        toast.classList.add('translate-y-20', 'opacity-0');
+      }, 2600);
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return str.replace(/[&<>"']/g, function(m) {
+        switch (m) {
+          case '&': return '&amp;';
+          case '<': return '&lt;';
+          case '>': return '&gt;';
+          case '"': return '&quot;';
+          case "'": return '&#39;';
+          default: return m;
+        }
+      });
+    }
+
+    function escapeCsv(text) {
+      return text.replace(/"/g, '""');
+    }
+
+    /* ----------------------------------------------------
+     * App Initialization
+     * ---------------------------------------------------- */
+    window.addEventListener('DOMContentLoaded', () => {
+      loadEvents();
+      updateNavTabs();
+      updateCategoryControls();
+      renderCalendar();
+      renderEventsList();
+    });
+  </script>
+</body>
+</html>
