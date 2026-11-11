@@ -112,8 +112,12 @@
         </div>
       </div>
 
-      <!-- Quick Action Controls -->
+      <!-- Quick Action Controls & Cloud Sync Status -->
       <div class="flex items-center space-x-2">
+        <div id="syncBadge" class="hidden sm:flex items-center space-x-1.5 px-2.5 py-1 bg-gray-100 text-gray-600 rounded-full text-[11px] font-medium transition border border-gray-200">
+          <span id="syncDot" class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
+          <span id="syncText">Connecting cloud...</span>
+        </div>
         <button id="quickAddBtn" class="flex items-center space-x-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs sm:text-sm font-medium transition shadow-xs active:scale-95">
           <i class="ph-bold ph-plus text-xs"></i>
           <span>Add Event</span>
@@ -352,8 +356,12 @@
     <span class="text-sm font-medium" id="toastMessage">Action completed</span>
   </div>
 
-  <!-- JavaScript Logic -->
-  <script>
+  <!-- Firebase Cloud Sync Module & Application Logic -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+    import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+    import { getFirestore, doc, setDoc, deleteDoc, collection, onSnapshot, writeBatch } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
     /* ----------------------------------------------------
      * FY27 Definition & Constant Config
      * Apple Fiscal Year 2027:
@@ -407,68 +415,155 @@
       };
     }
 
-    // Auto-pick next distinct color from palette based on current events length
     function getNextAutoColor() {
       const idx = events.length % EVENT_PALETTE.length;
       return EVENT_PALETTE[idx].hex;
     }
 
     /* ----------------------------------------------------
-     * State Management
+     * State Management & Cloud Setup
      * ---------------------------------------------------- */
-    let currentView = 'all'; // 'all', 'q1', 'q2', 'q3', 'q4'
+    let currentView = 'all';
     let activeCategoryFilter = 'all';
     let searchQuery = '';
     let events = [];
+    let db = null;
+    let auth = null;
+    let currentUser = null;
+    let appId = typeof __app_id !== 'undefined' ? __app_id : 'apple-fy27-calendar';
 
-    // Helper: checks if a given date string (YYYY-MM-DD) falls within an event's start & end date
+    function setSyncStatus(status, text) {
+      const syncDot = document.getElementById('syncDot');
+      const syncText = document.getElementById('syncText');
+      if (!syncDot || !syncText) return;
+
+      if (status === 'online') {
+        syncDot.className = 'w-2 h-2 rounded-full bg-emerald-500';
+        syncText.textContent = text || 'Live Synced';
+      } else if (status === 'syncing') {
+        syncDot.className = 'w-2 h-2 rounded-full bg-amber-400 animate-pulse';
+        syncText.textContent = text || 'Syncing...';
+      } else {
+        syncDot.className = 'w-2 h-2 rounded-full bg-gray-400';
+        syncText.textContent = text || 'Offline';
+      }
+    }
+
+    // Helper: checks if a given date string falls within event's start & end date
     function isDateInEventRange(dateStr, event) {
       const start = event.startDate || event.date;
       const end = event.endDate || event.startDate || event.date;
       return dateStr >= start && dateStr <= end;
     }
 
-    // Load from local storage or set defaults
-    function loadEvents() {
-      try {
-        const saved = localStorage.getItem('apple_fy27_events');
-        if (saved) {
-          const parsed = JSON.parse(saved);
-          events = parsed.map((e, index) => ({
-            ...e,
-            startDate: e.startDate || e.date || '2026-10-01',
-            endDate: e.endDate || e.startDate || e.date || '2026-10-01',
-            category: (e.category || '').trim(),
-            color: e.color || EVENT_PALETTE[index % EVENT_PALETTE.length].hex
-          }));
-        } else {
-          events = [];
-        }
-      } catch (e) {
-        events = [];
-      }
-    }
-
-    function saveEvents() {
-      try {
-        localStorage.setItem('apple_fy27_events', JSON.stringify(events));
-      } catch (e) {
-        console.error("Local storage error:", e);
-      }
-    }
-
-    // Determine Apple FY quarter by ISO date string (YYYY-MM-DD)
     function getFiscalQuarter(dateStr) {
       if (!dateStr) return '';
       const parts = dateStr.split('-');
       const y = parseInt(parts[0], 10);
-      const m = parseInt(parts[1], 10); // 1 - 12
+      const m = parseInt(parts[1], 10);
 
       if (y === 2026 && (m === 10 || m === 11 || m === 12)) return 'q1';
       if (y === 2027 && (m === 1 || m === 2 || m === 3)) return 'q2';
       if (y === 2027 && (m === 4 || m === 5 || m === 6)) return 'q3';
       if (y === 2027 && (m === 7 || m === 8 || m === 9)) return 'q4';
       return '';
+    }
+
+    /* ----------------------------------------------------
+     * Firebase Cloud Real-time Listener & Init
+     * ---------------------------------------------------- */
+    async function initCloudSync() {
+      try {
+        if (typeof __firebase_config === 'undefined') {
+          // If running locally without environment variables, fallback gracefully to in-memory
+          setSyncStatus('offline', 'Local Session');
+          return;
+        }
+
+        const firebaseConfig = JSON.parse(__firebase_config);
+        const app = initializeApp(firebaseConfig);
+        auth = getAuth(app);
+        db = getFirestore(app);
+
+        // Strict Rule: Authenticate before Firestore queries
+        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+          await signInWithCustomToken(auth, __initial_auth_token);
+        } else {
+          await signInAnonymously(auth);
+        }
+        currentUser = auth.currentUser;
+
+        // Strict Rule: Public path /artifacts/{appId}/public/data/{collectionName}
+        const eventsColRef = collection(db, 'artifacts', appId, 'public', 'data', 'events');
+
+        // Real-time listener: every change is pushed immediately to all users
+        onSnapshot(eventsColRef, (snapshot) => {
+          events = [];
+          snapshot.forEach((docSnap) => {
+            const data = docSnap.data();
+            events.push({
+              id: docSnap.id,
+              ...data
+            });
+          });
+
+          // Sort in memory (Rule 2: Never use orderBy query)
+          events.sort((a, b) => (a.startDate || '').localeCompare(b.startDate || ''));
+
+          setSyncStatus('online', `${events.length} Live Synced`);
+          updateCategoryControls();
+          renderCalendar();
+          renderEventsList();
+        }, (err) => {
+          console.error("Firestore real-time sync error:", err);
+          setSyncStatus('offline', 'Sync Error');
+        });
+
+      } catch (err) {
+        console.warn("Could not connect to live cloud:", err);
+        setSyncStatus('offline', 'Local Session');
+      }
+    }
+
+    async function persistEventToCloud(eventObj) {
+      if (!db || !currentUser) return;
+      try {
+        setSyncStatus('syncing', 'Saving...');
+        const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'events', eventObj.id);
+        await setDoc(docRef, eventObj);
+        setSyncStatus('online', 'Live Synced');
+      } catch (e) {
+        console.error("Error saving event to cloud:", e);
+        showToast("Error saving to cloud database");
+      }
+    }
+
+    async function removeEventFromCloud(eventId) {
+      if (!db || !currentUser) return;
+      try {
+        setSyncStatus('syncing', 'Deleting...');
+        const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'events', eventId);
+        await deleteDoc(docRef);
+        setSyncStatus('online', 'Live Synced');
+      } catch (e) {
+        console.error("Error deleting event from cloud:", e);
+      }
+    }
+
+    async function clearAllEventsFromCloud() {
+      if (!db || !currentUser) return;
+      try {
+        setSyncStatus('syncing', 'Clearing...');
+        const batch = writeBatch(db);
+        events.forEach(e => {
+          const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'events', e.id);
+          batch.delete(docRef);
+        });
+        await batch.commit();
+        setSyncStatus('online', 'Live Synced');
+      } catch (e) {
+        console.error("Error clearing events:", e);
+      }
     }
 
     /* ----------------------------------------------------
@@ -488,13 +583,9 @@
         const monthsInQuarter = FY_MONTHS.filter(m => m.quarter === qKey);
 
         const quarterSection = document.createElement('section');
-        quarterSection.className = 'bg-white rounded-3xl p-5 sm:p-6 shadow-sm border border-gray-200/80 transition-all';
-        quarterSection.id = `section-${qKey}`;
-
         quarterSection.className = 'bg-white rounded-2xl p-3 sm:p-4 shadow-xs border border-gray-200/80 transition-all';
         quarterSection.id = `section-${qKey}`;
 
-        // Header for Quarter with pill and stats
         const qEventsCount = events.filter(e => {
           const sQ = getFiscalQuarter(e.startDate);
           const eQ = getFiscalQuarter(e.endDate);
@@ -531,11 +622,10 @@
       attachDayCellListeners();
     }
 
-    // Helper: generate a single month grid
     function generateMonthHTML(mInfo) {
       const { year, month, name } = mInfo;
       const firstDay = new Date(year, month, 1);
-      const startingDayOfWeek = firstDay.getDay(); // 0 is Sun
+      const startingDayOfWeek = firstDay.getDay();
       const daysInMonth = new Date(year, month + 1, 0).getDate();
 
       const dayNames = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
@@ -551,7 +641,6 @@
         const dd = String(day).padStart(2, '0');
         const dateString = `${year}-${mm}-${dd}`;
 
-        // Get events active on this specific date
         const dayEvents = events.filter(e => isDateInEventRange(dateString, e));
         const hasEvent = dayEvents.length > 0;
 
@@ -559,7 +648,6 @@
         let dayInlineStyle = '';
 
         if (hasEvent) {
-          // If 1 event, lightly tint the date cell with that event's custom color
           if (dayEvents.length === 1) {
             const cDef = getEventColorDef(dayEvents[0].color);
             dayInlineStyle = `style="background-color: ${cDef.bg}; border-color: ${cDef.border};"`;
@@ -624,22 +712,23 @@
     }
 
     /* ----------------------------------------------------
-     * Dynamic Category Management & Suggestions
+     * Dynamic Category Management
      * ---------------------------------------------------- */
     function updateCategoryControls() {
-      // Collect unique non-empty categories
       const distinctCats = Array.from(new Set(
         events
           .map(e => (e.category || '').trim())
           .filter(c => c.length > 0)
       )).sort();
 
-      // 1. Update the HTML datalist for form autocompletion
       const datalist = document.getElementById('existingCategoriesList');
-      datalist.innerHTML = distinctCats.map(cat => `<option value="${escapeHtml(cat)}"></option>`).join('');
+      if (datalist) {
+        datalist.innerHTML = distinctCats.map(cat => `<option value="${escapeHtml(cat)}"></option>`).join('');
+      }
 
-      // 2. Render dynamic category pills in the sidebar
       const pillsContainer = document.getElementById('categoryFilters');
+      if (!pillsContainer) return;
+
       let pillsHTML = `
         <button data-cat="all" class="cat-pill px-2.5 py-1 rounded-full ${activeCategoryFilter === 'all' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'} font-medium text-[11px] transition">All</button>
       `;
@@ -655,7 +744,6 @@
 
       pillsContainer.innerHTML = pillsHTML;
 
-      // Re-bind pill click listeners
       pillsContainer.querySelectorAll('.cat-pill').forEach(btn => {
         btn.addEventListener('click', () => {
           activeCategoryFilter = btn.getAttribute('data-cat');
@@ -674,7 +762,6 @@
 
       let filtered = events.slice();
 
-      // Quarter filtering based on start date or end date
       if (currentView !== 'all') {
         filtered = filtered.filter(e => {
           const sQ = getFiscalQuarter(e.startDate);
@@ -683,12 +770,10 @@
         });
       }
 
-      // Dynamic custom category filtering
       if (activeCategoryFilter !== 'all') {
         filtered = filtered.filter(e => (e.category || '').trim().toLowerCase() === activeCategoryFilter.toLowerCase());
       }
 
-      // Search query filtering
       if (searchQuery.trim() !== '') {
         const query = searchQuery.toLowerCase();
         filtered = filtered.filter(e => 
@@ -700,8 +785,7 @@
         );
       }
 
-      // Sort by startDate ascending
-      filtered.sort((a, b) => new Date(a.startDate) - new Date(b.startDate));
+      filtered.sort((a, b) => (a.startDate || '').localeCompare(b.startDate || ''));
 
       badge.textContent = `${filtered.length} shown`;
 
@@ -710,11 +794,13 @@
           <div class="text-center py-10 px-4 text-gray-400">
             <i class="ph ph-calendar-blank text-3xl mb-2 stroke-[1.5]"></i>
             <p class="text-xs font-medium">No events found matching criteria.</p>
-            <button onclick="resetFilters()" class="mt-2 text-xs text-blue-600 font-semibold hover:underline">
+            <button id="emptyClearFiltersBtn" class="mt-2 text-xs text-blue-600 font-semibold hover:underline">
               Clear filters
             </button>
           </div>
         `;
+        const emptyBtn = document.getElementById('emptyClearFiltersBtn');
+        if (emptyBtn) emptyBtn.addEventListener('click', resetFilters);
         return;
       }
 
@@ -722,7 +808,6 @@
         const cDef = getEventColorDef(item.color);
         const qUpper = item.quarter ? item.quarter.toUpperCase() : 'FY27';
 
-        // Format date or date range display
         const startObj = new Date(item.startDate + 'T00:00:00');
         const endObj = new Date(item.endDate + 'T00:00:00');
 
@@ -788,7 +873,6 @@
         `;
       }).join('');
 
-      // Add event listeners for cards
       container.querySelectorAll('.event-card').forEach(card => {
         card.addEventListener('click', (e) => {
           if (e.target.closest('.edit-btn')) {
@@ -825,20 +909,17 @@
         return;
       }
 
-      // Smooth scroll to the start date
       targetCell.scrollIntoView({
         behavior: 'smooth',
         block: 'center',
         inline: 'center'
       });
 
-      // Clear previous pop-out animations
       document.querySelectorAll('.animate-pop-out').forEach(el => {
         el.classList.remove('animate-pop-out');
       });
 
       setTimeout(() => {
-        // Pop-out all days included in this range that are rendered
         let cur = new Date(startDateStr + 'T00:00:00');
         const stop = new Date(endStr + 'T00:00:00');
 
@@ -1030,7 +1111,6 @@
     }
 
     eventStartDate.addEventListener('change', (e) => {
-      // If end date is prior to start date, update end date to match
       if (eventEndDate.value < e.target.value) {
         eventEndDate.value = e.target.value;
       }
@@ -1038,14 +1118,13 @@
     });
 
     eventEndDate.addEventListener('change', (e) => {
-      // If start date is after end date, update start date to match
       if (eventStartDate.value > e.target.value) {
         eventStartDate.value = e.target.value;
       }
       updateQuarterDisplay(eventStartDate.value, e.target.value);
     });
 
-    eventForm.addEventListener('submit', (e) => {
+    eventForm.addEventListener('submit', async (e) => {
       e.preventDefault();
       const title = eventTitle.value.trim();
       const startDate = eventStartDate.value;
@@ -1066,61 +1145,56 @@
         return;
       }
 
-      if (editEventId.value) {
-        // Edit existing
-        const idx = events.findIndex(item => item.id === editEventId.value);
-        if (idx !== -1) {
-          events[idx] = {
-            ...events[idx],
-            title,
-            startDate,
-            endDate,
-            date: startDate, // backward compatibility
-            category,
-            color,
-            description: desc,
-            quarter: qStart
-          };
-          showToast("Event updated successfully!");
-        }
+      const eventPayload = {
+        id: editEventId.value || ('evt-' + Date.now()),
+        title,
+        startDate,
+        endDate,
+        date: startDate,
+        category,
+        color,
+        description: desc,
+        quarter: qStart
+      };
+
+      if (db) {
+        await persistEventToCloud(eventPayload);
+        showToast(editEventId.value ? "Event updated live in cloud!" : "Event synced live to cloud!");
       } else {
-        // Create new
-        const newEvent = {
-          id: 'evt-' + Date.now(),
-          title,
-          startDate,
-          endDate,
-          date: startDate, // backward compatibility
-          category,
-          color,
-          description: desc,
-          quarter: qStart
-        };
-        events.push(newEvent);
-        showToast("New event added to FY27!");
+        // Fallback for local session
+        const idx = events.findIndex(item => item.id === eventPayload.id);
+        if (idx !== -1) {
+          events[idx] = eventPayload;
+        } else {
+          events.push(eventPayload);
+        }
+        updateCategoryControls();
+        renderCalendar();
+        renderEventsList();
+        showToast("Saved locally");
       }
 
-      saveEvents();
       closeModal();
-      updateCategoryControls();
-      renderCalendar();
-      renderEventsList();
-
       setTimeout(() => {
         highlightAndScrollToDateRange(startDate, endDate);
       }, 250);
     });
 
-    deleteEventBtn.addEventListener('click', () => {
+    deleteEventBtn.addEventListener('click', async () => {
       const id = editEventId.value;
       if (!id) return;
-      events = events.filter(e => e.id !== id);
-      saveEvents();
+
+      if (db) {
+        await removeEventFromCloud(id);
+        showToast("Event removed from cloud");
+      } else {
+        events = events.filter(e => e.id !== id);
+        updateCategoryControls();
+        renderCalendar();
+        renderEventsList();
+        showToast("Event removed");
+      }
       closeModal();
-      updateCategoryControls();
-      renderCalendar();
-      renderEventsList();
-      showToast("Event removed");
     });
 
     document.getElementById('quickAddBtn').addEventListener('click', () => openCreateModal());
@@ -1155,18 +1229,21 @@
       renderEventsList();
     });
 
-    // Clear all events button
-    document.getElementById('clearAllBtn').addEventListener('click', () => {
+    document.getElementById('clearAllBtn').addEventListener('click', async () => {
       if (events.length === 0) {
         showToast("Calendar is already empty");
         return;
       }
-      events = [];
-      saveEvents();
-      updateCategoryControls();
-      renderCalendar();
-      renderEventsList();
-      showToast("All events cleared");
+      if (db) {
+        await clearAllEventsFromCloud();
+        showToast("All events removed from cloud");
+      } else {
+        events = [];
+        updateCategoryControls();
+        renderCalendar();
+        renderEventsList();
+        showToast("All events cleared");
+      }
     });
 
     // CSV Export
@@ -1190,7 +1267,6 @@
       showToast("Exported FY27 CSV file");
     });
 
-    // Mobile sidebar toggle
     const toggleSidebarBtn = document.getElementById('toggleSidebarBtn');
     const eventsSidebar = document.getElementById('eventsSidebar');
     toggleSidebarBtn.addEventListener('click', () => {
@@ -1237,11 +1313,11 @@
      * App Initialization
      * ---------------------------------------------------- */
     window.addEventListener('DOMContentLoaded', () => {
-      loadEvents();
       updateNavTabs();
       updateCategoryControls();
       renderCalendar();
       renderEventsList();
+      initCloudSync();
     });
   </script>
 </body>
